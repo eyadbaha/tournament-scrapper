@@ -1,14 +1,19 @@
 import express from "express";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 const tonamelRouter = express.Router();
+chromium.setHeadlessMode = true;
+chromium.setGraphicsMode = false;
 
 tonamelRouter.get("/info/:id", (req, res) => {
   const id = req.params.id;
   (async () => {
     const browser = await puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
     const page = await browser.newPage();
     await page.setDefaultNavigationTimeout(0);
@@ -40,8 +45,10 @@ tonamelRouter.get("/brackets/:id", (req, res) => {
   const id = req.params.id;
   (async () => {
     const browser = await puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
     const page = await browser.newPage();
     await page.setDefaultNavigationTimeout(0);

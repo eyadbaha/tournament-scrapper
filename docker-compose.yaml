@@ -1,0 +1,33 @@
+version: "1"
+services:
+  tournament-api-dev:
+    build:
+      target: development
+    image: tournament-api:dev
+    entrypoint: ["npm", "run", "dev"]
+    cpus: 2
+    mem_limit: 2048m
+    ports:
+      - "5000:8090"
+    volumes:
+      - ./src:/app/src
+  tournament-api-test:
+    build:
+      target: test
+    image: tournament-api:test
+    ports:
+      - "9000:8080"
+      - "5000:8090"
+    cpus: 2
+    mem_limit: 2048m
+    command: index.handler
+  tournament-api-build:
+    build:
+      target: production
+    image: tournament-api:build
+    ports:
+      - "9000:8080"
+      - "5000:8090"
+    command: sh -c "apk add zip && zip -r /output/zip.zip ."
+    volumes:
+      - ./output:/output
