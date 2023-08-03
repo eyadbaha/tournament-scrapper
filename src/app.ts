@@ -1,4 +1,5 @@
 import express from "express";
+import padiaGamingRouter from "./routes/padiagaming.js";
 import startgg from "./routes/startgg.js";
 import tonamel from "./routes/tonamel.js";
 
@@ -10,6 +11,7 @@ app.get("/", (req, res) => {
 });
 app.use("/startgg", startgg);
 app.use("/tonamel", tonamel);
+app.use("/padiagaming", padiaGamingRouter);
 
 app.listen(process.env.PORT || port, () => {
   console.log(`Server started: http://localhost:${port}/`);
