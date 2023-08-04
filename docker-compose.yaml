@@ -11,6 +11,8 @@ services:
       - "5000:8090"
     volumes:
       - ./src:/app/src
+    environment:
+      - STARTGG_TOKEN=${STARTGG_TOKEN}
   tournament-api-test:
     build:
       target: test
