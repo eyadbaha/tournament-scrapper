@@ -64,9 +64,10 @@ startggRouter.get("/brackets/:id", async (req: any, res: any) => {
     res.end(
       JSON.stringify(
         dataRequest.data.data.tournament.events[0].phases[0].sets.nodes.map((set: any) => {
-          const player1 = [set.slots[0].standing.entrant.id, set.slots[0].standing.stats.score.value];
-          const player2 = [set.slots[1].standing.entrant.id, set.slots[1].standing.stats.score.value];
-          return { round: set.round, player1, player2 };
+          const player1 = { id: set.slots[0].standing.entrant.id, score: set.slots[0].standing.stats.score.value };
+          const player2 = { id: set.slots[1].standing.entrant.id, score: set.slots[1].standing.stats.score.value };
+          const players = [player1, player2];
+          return { round: set.round, players };
         })
       )
     );

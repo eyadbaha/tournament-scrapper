@@ -89,7 +89,7 @@ tonamelRouter.get("/brackets/:id", async (req, res) => {
     const bracket = document.querySelector(".bracket-content");
     const lists = bracket?.querySelectorAll(".m-matchup-card-list");
     lists?.forEach((list, listIndex) => {
-      const cards = list.querySelectorAll(".matchup-card");
+      const cards = list.querySelectorAll(".m-matchup-card.matchup-card");
       cards.forEach((card) => {
         const players = Array.from(card.querySelectorAll(".matchup-player")).map((player) => ({
           id: player.querySelector("img")?.src.match(/player\/(.*?)\//)?.[1],
