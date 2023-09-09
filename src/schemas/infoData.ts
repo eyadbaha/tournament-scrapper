@@ -10,6 +10,7 @@ const schema = z.object({
   participants: z.number(),
   state: z.union([z.string().regex(/^\d+$/).transform(Number), z.number()]),
   limit: z.number().optional(),
+  organizer: z.string().nonempty().optional(),
 });
 const infoDataSchema = schema.transform((obj) => {
   if (typeof obj.limit !== "number") delete obj.limit;

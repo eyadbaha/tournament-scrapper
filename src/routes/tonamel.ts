@@ -19,12 +19,15 @@ const evaluateInfo = () => {
     .querySelector(".a-text.a-text--x-small.a-text--gray.a-text--inline.a-text--normal")
     ?.textContent?.replace(/\b\w+\b/g, (word) => word.charAt(0) + word.slice(1).toLowerCase());
   const limitString = getContentFromList("Participant Upper Limit")?.replace(/Players/g, "");
+  const organizer = document.querySelector<HTMLElement>(
+    "div.organization a div.a-flex.a-flex--flex-start.a-flex--row span.a-text.a-text--xx-small.a-text--gray.a-text--inline.a-text--normal"
+  )?.innerText;
   const limit = limitString && +limitString;
   let state = 0;
   const finishState = document.querySelector(".entry-box")?.textContent?.includes("Finished") || false;
   if (finishState) state = 2;
   else if (Date.now() > date) state = 1;
-  return { title, date, details, game, state, limit };
+  return { title, date, details, game, state, limit, organizer };
 };
 const evaluatePart = () => {
   return document.querySelectorAll(".m-profile-icon").length;
