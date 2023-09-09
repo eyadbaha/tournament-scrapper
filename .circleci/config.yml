@@ -16,7 +16,7 @@ jobs:
       - run: #start running the deployment process
           name: Build
           command: |
-            npm i --omit=dev
+            npm i --omit=dev && npm run build
       - run:
           name: Function Package
           command: |
