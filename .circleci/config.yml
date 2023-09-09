@@ -16,13 +16,17 @@ jobs:
       - run: #start running the deployment process
           name: Build
           command: |
-            npm i --omit=dev && npm run build
+            npm i typescript && npm run build && npm uninstall typescript
+      - run: #start running the deployment process
+          name: Install Packages
+          command: |
+            npm i --omit=dev
       - run:
-          name: Function Package
+          name: Lambda Function Package
           command: |
             zip -r deployment-package.zip build node_modules index.js package.json
       - run:
-          name: Deploy Package
+          name: Deploy
           command: |
             aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb://deployment-package.zip
       # Clean up the zip file
