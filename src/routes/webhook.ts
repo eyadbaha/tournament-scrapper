@@ -6,4 +6,8 @@ webhookRouter.post("/", (req, res) => {
   res.status(200).send("RECIVED");
 });
 
+webhookRouter.get("/", (req, res) => {
+  res.status(200).send("RECIVED");
+});
+
 export default webhookRouter;
