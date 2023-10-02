@@ -11,7 +11,7 @@ const app = express();
 const port = 8090;
 app.use(express.json());
 app.get("/", (req, res) => {
-  res.send("v0");
+  res.status(200).send("v0");
 });
 app.use("/startgg", startgg);
 app.use("/tonamel", tonamel);
