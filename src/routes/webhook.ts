@@ -3,6 +3,7 @@ import express from "express";
 const webhookRouter = express.Router();
 
 webhookRouter.post("/", (req, res) => {
+  console.log(req.body);
   res.status(200).send("RECIVED");
 });
 
