@@ -11,8 +11,8 @@ services:
       - "5000:8090"
     volumes:
       - ./src:/app/src
-    environment:
-      - STARTGG_TOKEN=${STARTGG_TOKEN}
+    env_file:
+      - ./.env
   tournament-api-test:
     build:
       target: test
@@ -20,6 +20,7 @@ services:
     ports:
       - "9000:8080"
       - "5000:8090"
+      - "27017:27017"
     cpus: 2
     mem_limit: 2048m
     command: index.handler
