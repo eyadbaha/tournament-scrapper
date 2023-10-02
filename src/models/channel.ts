@@ -12,6 +12,6 @@ const channelSchema = new mongoose.Schema({
   },
 });
 channelSchema.set("validateBeforeSave", true);
-const channelModel = mongoose.model("tournament", channelSchema);
+const channelModel = mongoose.model("channel", channelSchema);
 
 export default channelModel;

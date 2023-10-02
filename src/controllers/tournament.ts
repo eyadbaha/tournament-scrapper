@@ -1,7 +1,7 @@
 import tournamentModel from "../models/tournament.js";
 import mongoose, { Document, ObjectId } from "mongoose";
 
-interface ChannelSchema extends Document {
+interface TournamentSchema extends Document {
   site: String;
   id: String;
   date: Date;
@@ -14,26 +14,40 @@ interface ChannelSchema extends Document {
   title: String;
   details?: String;
 }
-
-const createTournament = async (channel: any) => {
+type Tournament = {
+  site: String;
+  id: String;
+  date: Date;
+  tags: String[];
+  game: String;
+  participants?: Number;
+  state: Number;
+  limit?: Number;
+  organizer?: Number;
+  title: String;
+  details?: String;
+};
+const createTournament = async (channel: any): Promise<Boolean> => {
   try {
     const newTournament = await tournamentModel.create(channel);
     console.log(newTournament);
+    return true;
   } catch (error) {
     console.log(error);
+    return false;
   }
 };
-const getTournament = async (_id: ObjectId): Promise<ChannelSchema | null> => {
+const getTournament = async (_id: ObjectId): Promise<Tournament | null> => {
   try {
-    const channel = (await tournamentModel.findById(_id)) as any;
+    const channel = (await tournamentModel.findById(_id).lean()) as Tournament;
     return channel || null;
   } catch {
     return null;
   }
 };
-const getAllTournaments = async (): Promise<ChannelSchema[] | null> => {
+const getAllTournaments = async (): Promise<Tournament[] | null> => {
   try {
-    const channel = (await tournamentModel.find({})) as any;
+    const channel = (await tournamentModel.find({}).lean()) as Tournament[];
     return channel;
   } catch {
     return null;

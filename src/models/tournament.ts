@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 
 const tournamentSchema = new mongoose.Schema({
   site: String,
-  id: String,
+  id: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   date: Date,
   tags: [String],
   game: String,
