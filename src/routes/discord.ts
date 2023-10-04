@@ -19,7 +19,7 @@ discordRouter.post("/", async (req, res, next) => {
     if (!channel) {
       await channelController.createChannel({
         id: channelID,
-        lastMessageId: data[0].id,
+        lastMessageId: "",
       });
       return res.json({ success: true, message: `Added discord channel (${channelID}) to watch list.` });
     }
@@ -53,30 +53,33 @@ discordRouter.post("/update", async (req, res) => {
           }
         }
         for (let info of infoArray) {
-          const postSuccess = await tournamentController.createTournament(info);
-          if (postSuccess) {
-            const messageArray = [];
-            messageArray.push(`Title:${info.title}`);
-            if (info.tags.includes("rd")) {
-              messageArray.push("Format: Rush Duel");
-            } else if (info.tags.includes("sd")) {
-              messageArray.push("Format: Speed Duel");
-            } else if (info.tags.includes("md")) {
-              messageArray.push("Format: Master Duel");
-            }
-            messageArray.push(`Date: ${formatDate(info.date)}`);
-            messageArray.push(`Link: https://www.${info.url}`);
-            const message = messageArray.reduce((sum, message) => {
-              return sum + `-${message}\n`;
-            }, "");
-            const facebookUsers = (await facebookUserController.getAllFacebookUsers()) || [];
-            for (let facebookUser of facebookUsers) {
-              if (info.tags.some((item) => facebookUser.config.following.includes(item)))
-                await messenger.callSendAPI(
-                  facebookUser.id,
-                  { text: message },
-                  { messaging_type: "MESSAGE_TAG", tag: "CONFIRMED_EVENT_UPDATE" }
-                );
+          const dateNow = Date.now();
+          if (info.date > dateNow) {
+            const postSuccess = await tournamentController.createTournament(info);
+            if (postSuccess) {
+              const messageArray = [];
+              messageArray.push(`Title:${info.title}`);
+              if (info.tags.includes("rd")) {
+                messageArray.push("Format: Rush Duel");
+              } else if (info.tags.includes("sd")) {
+                messageArray.push("Format: Speed Duel");
+              } else if (info.tags.includes("md")) {
+                messageArray.push("Format: Master Duel");
+              }
+              messageArray.push(`Date: ${formatDate(info.date)}`);
+              messageArray.push(`Link: https://www.${info.url}`);
+              const message = messageArray.reduce((sum, message) => {
+                return sum + `-${message}\n`;
+              }, "");
+              const facebookUsers = (await facebookUserController.getAllFacebookUsers()) || [];
+              for (let facebookUser of facebookUsers) {
+                if (info.tags.some((item) => facebookUser.config.following.includes(item)))
+                  await messenger.callSendAPI(
+                    facebookUser.id,
+                    { text: message },
+                    { messaging_type: "MESSAGE_TAG", tag: "CONFIRMED_EVENT_UPDATE" }
+                  );
+              }
             }
           }
         }
