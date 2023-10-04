@@ -151,7 +151,7 @@ async function handleWebhookEvent(webhookEvent: any) {
           });
         case "CHANGE_LANG":
           return await callSendAPI(senderPSID, {
-            text: "Please Choose your Prefred Language.",
+            text: "Please Choose your Preferred Language.",
             quick_replies: [
               {
                 content_type: "text",
@@ -347,7 +347,7 @@ async function handleWebhookEvent(webhookEvent: any) {
     return await callSendAPI(senderPSID, { text: "Unknown option, please try again!" });
   }
   return await callSendAPI(senderPSID, {
-    text: "Hello!\nI'm DataStorm, a Bot that notifies you every time a Yu-Gi-Oh! Digital Tournament is announced, Please enter the subscribe button below if you wish to get notified!\n\nIf you have any suggestions or want to report an issue, please contact the developer using one of these methods:\n-Discord:PlaymakerEY\n-Email:PlaymakerEY@gmail.com",
+    text: "Hello!\nI'm DataStorm, a Bot that notifies you everytime a Yu-Gi-Oh! Digital Tournament is announced, Please enter the subscribe button below if you wish to get notified!\n\nIf you have any suggestions or want to report an issue, please contact the developer using one of these methods:\n-Discord:PlaymakerEY\n-Email:PlaymakerEY@gmail.com",
     quick_replies: [
       {
         content_type: "text",
