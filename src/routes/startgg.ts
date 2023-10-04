@@ -1,5 +1,5 @@
 import express from "express";
-import startgg from "../utils/startgg.js";
+import startgg from "../services/startgg.js";
 
 const startggRouter = express.Router();
 startggRouter.get("/brackets/:id", async (req, res, next) => {

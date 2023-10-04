@@ -1,12 +1,31 @@
 import express from "express";
 import { getDiscordMessages } from "../utils/getDiscordMessages.js";
 import channelController from "../controllers/channel.js";
-import startgg from "../utils/startgg.js";
+import startgg from "../services/startgg.js";
 import tournamentController from "../controllers/tournament.js";
 import facebookUserController from "../controllers/facebookUser.js";
 import { callSendAPI } from "./webhook.js";
 
 const discordRouter = express.Router();
+const formatDate = (timestamp: string | number) => {
+  if (typeof timestamp == "string") timestamp = parseInt(timestamp, 10);
+  const date = new Date(timestamp);
+
+  // Set the time zone offset to UTC+3 (180 minutes ahead of UTC)
+  date.setMinutes(date.getMinutes() + 180);
+
+  // Get the individual components (date, month, year, hour, minute) from the date
+  const day = date.getDate();
+  const month = date.getMonth() + 1; // Months are zero-based, so add 1
+  const year = date.getFullYear();
+  const hour = date.getHours();
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12; // Convert to 12-hour format
+
+  // Format the components into the desired string
+  const formattedDate = `${day}/${month}/${year} ${hour12}${ampm} (UTC+3)`;
+  return formattedDate;
+};
 discordRouter.get("/", (req, res) => {
   res.send("v1.0");
 });
@@ -79,7 +98,7 @@ discordRouter.post("/update", async (req, res) => {
             } else if (tags.includes("md")) {
               messageArray.push("Format: Master Duel");
             }
-            messageArray.push(`Date: ${new Date(info.date)}`);
+            messageArray.push(`Date: ${formatDate(info.date)}`);
             messageArray.push(`Link: https://www.start.gg/tournament/${info.id}`);
             const message = messageArray.reduce((sum, message) => {
               return sum + `-${message}\n`;
