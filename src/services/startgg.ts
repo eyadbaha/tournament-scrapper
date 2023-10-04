@@ -40,7 +40,16 @@ const getInfo = async (eventId: string) => {
   const statusMap: { [key: string]: number } = { CREATED: 0, ACTIVE: 1, COMPLETED: 2 };
   const stateText = response.events[0].state as string;
   const state: number = statusMap[stateText] || -1;
-  const data = { title, date, details, game, participants, state };
+  const url = `start.gg/tournament/${eventId}`;
+  const tags = [];
+  if (game.toLocaleLowerCase().includes("links")) {
+    if (title.toLocaleLowerCase().includes("rush")) {
+      tags.push("rd");
+    } else tags.push("sd");
+  } else if (game.toLocaleLowerCase().includes("master")) {
+    tags.push("md");
+  }
+  const data = { title, date, details, game, participants, state, url, tags };
   const parsedData = infoDataSchema.parse(data);
   return parsedData;
 };
@@ -104,12 +113,14 @@ const getBrackets = async (eventId: string) => {
       },
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    const data = dataRequest.data.data.tournament.events[0].phases[0].sets.nodes.map((set: any) => {
-      const player1 = { id: set.slots[0].standing.entrant.id, score: set.slots[0].standing.stats.score.value };
-      const player2 = { id: set.slots[1].standing.entrant.id, score: set.slots[1].standing.stats.score.value };
-      const players = [player1, player2];
-      return { round: set.round, players };
-    });
+    const data = dataRequest?.data?.data?.tournament?.events?.[0]?.phases?.[0]?.sets?.nodes?.map(
+      (set: { slots: any[]; round: number }) => {
+        const player1 = { id: set.slots[0].standing.entrant.id, score: set.slots[0].standing.stats.score.value };
+        const player2 = { id: set.slots[1].standing.entrant.id, score: set.slots[1].standing.stats.score.value };
+        const players = [player1, player2];
+        return { round: set.round, players };
+      }
+    );
     const parsedData = matchesDataSchema.parse(data);
     return parsedData;
   }

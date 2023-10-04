@@ -3,7 +3,7 @@ import express from "express";
 import facebookUserController from "../controllers/facebookUser.js";
 import tournamentController from "../controllers/tournament.js";
 interface MyObject {
-  date: Date; // Assuming "date" is a timestamp
+  date: number; // Assuming "date" is a timestamp
   string: string;
 }
 
@@ -194,7 +194,7 @@ async function handleWebhookEvent(webhookEvent: any) {
                 }
                 return {
                   date: tournament.date,
-                  string: `${tournament.title} (${format}): start.gg/tournament/${tournament.id}`,
+                  string: `${tournament.title} (${format}): ${tournament.url}`,
                 };
               });
             message = groupAndFormatByDay(filtredTournaments);

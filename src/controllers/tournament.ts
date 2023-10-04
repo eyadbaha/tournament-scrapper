@@ -1,35 +1,10 @@
 import tournamentModel from "../models/tournament.js";
-import mongoose, { Document, ObjectId } from "mongoose";
+import { ObjectId } from "mongoose";
+import { DataSchema } from "../schemas/infoData.js";
 
-interface TournamentSchema extends Document {
-  site: String;
-  id: String;
-  date: Date;
-  tags: String[];
-  game: String;
-  participants?: Number;
-  state: Number;
-  limit?: Number;
-  organizer?: Number;
-  title: String;
-  details?: String;
-}
-type Tournament = {
-  site: String;
-  id: String;
-  date: Date;
-  tags: String[];
-  game: String;
-  participants?: Number;
-  state: Number;
-  limit?: Number;
-  organizer?: Number;
-  title: String;
-  details?: String;
-};
-const createTournament = async (channel: any): Promise<Boolean> => {
+const createTournament = async (tournament: DataSchema): Promise<Boolean> => {
   try {
-    const newTournament = await tournamentModel.create(channel);
+    const newTournament = await tournamentModel.create(tournament);
     console.log(newTournament);
     return true;
   } catch (error) {
@@ -37,18 +12,18 @@ const createTournament = async (channel: any): Promise<Boolean> => {
     return false;
   }
 };
-const getTournament = async (_id: ObjectId): Promise<Tournament | null> => {
+const getTournament = async (_id: ObjectId): Promise<DataSchema | null> => {
   try {
-    const channel = (await tournamentModel.findById(_id).lean()) as Tournament;
-    return channel || null;
+    const tournament = await tournamentModel.findById(_id).lean();
+    return tournament || null;
   } catch {
     return null;
   }
 };
-const getAllTournaments = async (): Promise<Tournament[] | null> => {
+const getAllTournaments = async (): Promise<DataSchema[] | null> => {
   try {
-    const channel = (await tournamentModel.find({}).lean()) as Tournament[];
-    return channel;
+    const tournament = await tournamentModel.find({}).lean();
+    return tournament;
   } catch {
     return null;
   }

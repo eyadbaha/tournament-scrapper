@@ -1,18 +1,28 @@
 import mongoose from "mongoose";
+import { DataSchema } from "../schemas/infoData.js";
 
-const tournamentSchema = new mongoose.Schema({
-  site: String,
-  id: {
+const tournamentSchema = new mongoose.Schema<DataSchema>({
+  title: {
     type: String,
     required: true,
-    unique: true,
+    min: 0,
   },
-  date: Date,
-  tags: [String],
-  game: String,
+  date: {
+    type: Number,
+    required: true,
+  },
+  details: {
+    type: String,
+    required: false,
+    min: 0,
+  },
+  game: {
+    type: String,
+    required: true,
+  },
   participants: {
     type: Number,
-    required: false,
+    required: true,
     min: 0,
   },
   state: {
@@ -24,15 +34,18 @@ const tournamentSchema = new mongoose.Schema({
     required: false,
   },
   organizer: {
-    type: Number,
-    required: false,
-    min: 0,
-  },
-  title: String,
-  details: {
     type: String,
     required: false,
     min: 0,
+  },
+  url: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  tags: {
+    type: [String],
+    required: true,
   },
 });
 

@@ -75,7 +75,16 @@ const evaluateBrackets = () => {
 };
 const getBrackets = async (id: string) => {
   const data = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/brackets`, evaluateBrackets);
-  const parsedData = matchesDataSchema.parse(data);
+  const url = `padiagaming.com/tournament/${id}`;
+  const tags = [];
+  if (data.game.toLocaleLowerCase().includes("links")) {
+    if (data.title.toLocaleLowerCase().includes("rush")) {
+      tags.push("rd");
+    } else tags.push("sd");
+  } else if (data.game.toLocaleLowerCase().includes("master")) {
+    tags.push("md");
+  }
+  const parsedData = matchesDataSchema.parse({ ...data, url, tags });
   return parsedData;
 };
 const getInfo = async (id: string) => {

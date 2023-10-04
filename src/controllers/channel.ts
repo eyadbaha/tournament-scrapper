@@ -6,7 +6,7 @@ interface ChannelSchema extends Document {
   lastMessageId: string;
 }
 
-const createChannel = async (channel: any) => {
+const createChannel = async (channel: { id: string; lastMessageId: string }) => {
   try {
     const newChannel = await channelModel.create(channel);
     console.log(newChannel);

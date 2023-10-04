@@ -71,7 +71,16 @@ const getInfo = async (id: string) => {
       evaluatePart
     ),
   ]);
-  const safeData = infoDataSchema.parse({ ...data1, participants: data2 });
+  const url = `tonamel.com/competition/${id}`;
+  const tags = [];
+  if (data1.game.toLocaleLowerCase().includes("links")) {
+    if (data1.title.toLocaleLowerCase().includes("rush")) {
+      tags.push("rd");
+    } else tags.push("sd");
+  } else if (data1.game.toLocaleLowerCase().includes("master")) {
+    tags.push("md");
+  }
+  const safeData = infoDataSchema.parse({ ...data1, participants: data2, url });
   return safeData;
 };
 const getBrackets = async (id: string) => {
