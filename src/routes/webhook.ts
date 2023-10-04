@@ -178,6 +178,11 @@ async function handleWebhookEvent(webhookEvent: any) {
               ?.filter((tour) => {
                 return user.config.following.some((item) => tour.tags.includes(item));
               })
+              .filter((tour) => {
+                const date = Date.now();
+                if (tour.date > date) return true;
+                return false;
+              })
               .sort((a, b) => {
                 if (a.date > b.date) return 1;
                 if (a.date < b.date) return -1;
