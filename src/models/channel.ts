@@ -10,6 +10,11 @@ const channelSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  name: {
+    type: String,
+    required: true,
+    unique: true,
+  },
 });
 channelSchema.set("validateBeforeSave", true);
 const channelModel = mongoose.model("channel", channelSchema);

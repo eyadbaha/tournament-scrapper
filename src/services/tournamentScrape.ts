@@ -8,7 +8,6 @@ const getInfo = async (url: string) => {
     const info = await startgg.getInfo(id);
     return info;
   } else if (url.includes("tonamel.com")) {
-    console.log(url, id);
     const info = await tonamel.getInfo(id);
     return info;
   } else if (url.includes("paidiagaming.com")) {

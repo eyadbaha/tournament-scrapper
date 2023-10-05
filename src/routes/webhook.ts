@@ -18,7 +18,6 @@ async function callSendAPI(senderPSID: string, message: any) {
     messaging_type: "RESPONSE",
     access_token: PAGE_ACCESS_TOKEN,
   };
-  console.log(params);
   await axios.post(requestURL, params, {
     headers: {
       "Content-Type": "application/json",

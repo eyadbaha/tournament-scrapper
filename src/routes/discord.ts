@@ -12,14 +12,17 @@ const discordRouter = express.Router();
 
 discordRouter.post("/", async (req, res, next) => {
   const channelID = req.body.id;
+  const channelName = req.body.name;
   try {
-    if (!channelID) return res.status(40).send({ success: false, message: "No channel ID Provided." });
+    if (!(channelID && channelName))
+      return res.status(400).send({ success: false, message: "No channel ID Provided." });
     const data = await discord.getDiscordMessages(channelID);
     const channel = await channelController.getChannel(channelID);
-    if (!channel) {
+    if (!channel && data) {
       await channelController.createChannel({
         id: channelID,
         lastMessageId: "",
+        name: channelName,
       });
       return res.json({ success: true, message: `Added discord channel (${channelID}) to watch list.` });
     }
@@ -35,14 +38,20 @@ discordRouter.post("/update", async (req, res) => {
     for (let channel of allChannels) {
       const data = (await discord.getDiscordMessages(channel.id))[0];
       if (data.id != channel.lastMessageId) {
-        let messages = (await discord.getDiscordMessages(channel.id, 10)).reverse();
+        let messages: any = (await discord.getDiscordMessages(channel.id, 4)).reverse();
         const startIndex = messages.findIndex(
           (message: { id: string; content: string }) => message.id == channel.lastMessageId
         );
         if (startIndex != -1) messages = messages.slice(startIndex + 1);
         let infoArray: DataSchema[] = [];
         for (let message of messages) {
-          const messageUrls = message.content.match(/((https?:\/\/(www\.)?)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
+          let messageUrls: string[] = message.content.match(/((https?:\/\/(www\.)?)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
+          if (message.embeds) {
+            for (let embed of message.embeds) {
+              const urls = embed.description?.match(/((https?:\/\/(www\.)?)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
+              messageUrls = messageUrls.concat(urls);
+            }
+          }
           for (let url of messageUrls) {
             try {
               const info = await tournamentScrape.getInfo(url);
@@ -83,7 +92,7 @@ discordRouter.post("/update", async (req, res) => {
             }
           }
         }
-        await channelController.updateChannel({ id: channel.id, lastMessageId: data.id });
+        await channelController.updateChannel({ id: channel.id, lastMessageId: data.id, name: channel.name });
       }
     }
   }

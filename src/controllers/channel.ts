@@ -4,9 +4,10 @@ import { Document } from "mongoose";
 interface ChannelSchema extends Document {
   id: string;
   lastMessageId: string;
+  name: string;
 }
 
-const createChannel = async (channel: { id: string; lastMessageId: string }) => {
+const createChannel = async (channel: { id: string; lastMessageId: string; name: string }) => {
   try {
     const newChannel = await channelModel.create(channel);
     console.log(newChannel);
@@ -30,7 +31,11 @@ const getAllChannels = async (): Promise<ChannelSchema[] | null> => {
     return null;
   }
 };
-const updateChannel = async (channel: { id: string; lastMessageId: string }): Promise<ChannelSchema | null> => {
+const updateChannel = async (channel: {
+  id: string;
+  lastMessageId: string;
+  name: string;
+}): Promise<ChannelSchema | null> => {
   try {
     const foundChannel = await channelModel.findOne({ id: channel.id });
 

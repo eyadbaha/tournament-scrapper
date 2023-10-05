@@ -33,7 +33,7 @@ const getInfo = async (eventId: string) => {
   const [title, date, details, game, participants] = [
     response.name,
     response.events[0].startAt * 1000,
-    response.rules,
+    response.rules || "",
     response.events[0].videogame.name,
     response.numAttendees,
   ];
