@@ -37,7 +37,7 @@ discordRouter.post("/update", async (req, res) => {
   if (allChannels) {
     for (let channel of allChannels) {
       const data = (await discord.getDiscordMessages(channel.id))[0];
-      if (data.id != channel.lastMessageId) {
+      if (data && data?.id != channel.lastMessageId) {
         let messages: any = (await discord.getDiscordMessages(channel.id, 4)).reverse();
         const startIndex = messages.findIndex(
           (message: { id: string; content: string }) => message.id == channel.lastMessageId
