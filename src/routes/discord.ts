@@ -76,7 +76,7 @@ discordRouter.post("/update", async (req, res) => {
                 messageArray.push("Format: Master Duel");
               }
               messageArray.push(`Date: ${formatDate(info.date)}`);
-              messageArray.push(`Link: https://www.${info.url}`);
+              messageArray.push(`Link: https://${info.url}`);
               const message = messageArray.reduce((sum, message) => {
                 return sum + `-${message}\n`;
               }, "");
