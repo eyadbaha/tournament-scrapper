@@ -80,7 +80,7 @@ const getInfo = async (id: string) => {
   } else if (data1.game.toLocaleLowerCase().includes("master")) {
     tags.push("md");
   }
-  const safeData = infoDataSchema.parse({ ...data1, participants: data2, url });
+  const safeData = infoDataSchema.parse({ ...data1, participants: data2, url, tags });
   return safeData;
 };
 const getBrackets = async (id: string) => {

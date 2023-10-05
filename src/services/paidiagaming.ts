@@ -75,7 +75,12 @@ const evaluateBrackets = () => {
 };
 const getBrackets = async (id: string) => {
   const data = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/brackets`, evaluateBrackets);
-  const url = `padiagaming.com/tournament/${id}`;
+  const parsedData = matchesDataSchema.parse({ ...data });
+  return parsedData;
+};
+const getInfo = async (id: string) => {
+  const data = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/overview`, evaluateInfo);
+  const url = `paidiagaming.com/tournament/${id}`;
   const tags = [];
   if (data.game.toLocaleLowerCase().includes("links")) {
     if (data.title.toLocaleLowerCase().includes("rush")) {
@@ -84,12 +89,7 @@ const getBrackets = async (id: string) => {
   } else if (data.game.toLocaleLowerCase().includes("master")) {
     tags.push("md");
   }
-  const parsedData = matchesDataSchema.parse({ ...data, url, tags });
-  return parsedData;
-};
-const getInfo = async (id: string) => {
-  const data = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/overview`, evaluateInfo);
-  const parsedData = infoDataSchema.parse(data);
+  const parsedData = infoDataSchema.parse({ ...data, tags, url });
   return parsedData;
 };
 export default { getBrackets, getInfo };

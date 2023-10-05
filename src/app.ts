@@ -1,5 +1,5 @@
 import express from "express";
-import padiaGamingRouter from "./routes/padiagaming.js";
+import paidiaGamingRouter from "./routes/paidiagaming.js";
 import startgg from "./routes/startgg.js";
 import tonamel from "./routes/tonamel.js";
 import ErrorHandler from "./middlewares/errorHandler.js";
@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
 });
 app.use("/startgg", startgg);
 app.use("/tonamel", tonamel);
-app.use("/padiagaming", padiaGamingRouter);
+app.use("/paidiagaming", paidiaGamingRouter);
 app.use("/discord", discordRouter);
 app.use("/webhook", webhookRouter);
 app.use(ErrorHandler);

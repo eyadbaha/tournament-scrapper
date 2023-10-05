@@ -35,20 +35,20 @@ discordRouter.post("/update", async (req, res) => {
     for (let channel of allChannels) {
       const data = (await discord.getDiscordMessages(channel.id))[0];
       if (data.id != channel.lastMessageId) {
-        let messages = (await discord.getDiscordMessages(channel.id, 50)).reverse();
+        let messages = (await discord.getDiscordMessages(channel.id, 10)).reverse();
         const startIndex = messages.findIndex(
           (message: { id: string; content: string }) => message.id == channel.lastMessageId
         );
         if (startIndex != -1) messages = messages.slice(startIndex + 1);
         let infoArray: DataSchema[] = [];
         for (let message of messages) {
-          const messageUrls = message.content.match(/((https?:\/\/)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
+          const messageUrls = message.content.match(/((https?:\/\/(www\.)?)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
           for (let url of messageUrls) {
             try {
               const info = await tournamentScrape.getInfo(url);
               if (info) infoArray.push(info);
             } catch (err) {
-              console.log(url);
+              console.log(err);
             }
           }
         }
