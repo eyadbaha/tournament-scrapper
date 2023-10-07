@@ -4,8 +4,8 @@ const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
 const PAGE_ID = process.env.FACEBOOK_PAGE_ID; // Replace with your actual token
 const callSendAPI = async (
   senderPSID: string,
-  message: any,
-  messaging_type: any = { messaging_type: "RESPONSE" }
+  message: {},
+  messaging_type: { messaging_type: string; tag?: string } = { messaging_type: "RESPONSE" }
 ): Promise<Boolean> => {
   try {
     const requestURL = `https://graph.facebook.com/v18.0/${PAGE_ID}/messages`;

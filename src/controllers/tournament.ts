@@ -2,7 +2,7 @@ import tournamentModel from "../models/tournament.js";
 import { ObjectId } from "mongoose";
 import { DataSchema } from "../schemas/infoData.js";
 
-const createTournament = async (tournament: DataSchema): Promise<Boolean> => {
+const createTournament = async (tournament: any) => {
   try {
     const newTournament = await tournamentModel.create(tournament);
     console.log(newTournament);

@@ -1,30 +1,13 @@
-import axios from "axios";
 import express from "express";
 import facebookUserController from "../controllers/facebookUser.js";
 import tournamentController from "../controllers/tournament.js";
+import messenger from "../services/messenger.js";
 interface MyObject {
   date: number; // Assuming "date" is a timestamp
   string: string;
 }
 
-const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-const PAGE_ID = process.env.FACEBOOK_PAGE_ID; // Replace with your actual token
-
-async function callSendAPI(senderPSID: string, message: any) {
-  const requestURL = `https://graph.facebook.com/v18.0/${PAGE_ID}/messages`;
-  const params = {
-    recipient: { id: senderPSID },
-    message: message,
-    messaging_type: "RESPONSE",
-    access_token: PAGE_ACCESS_TOKEN,
-  };
-  await axios.post(requestURL, params, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-}
-const toggleUserTag = async (user: any, tag: string) => {
+const toggleUserTag = async (user: FacebookUser, tag: string) => {
   if (user) {
     const index = user.config.following.indexOf(tag);
     index !== -1 ? user.config.following.splice(index, 1) : user.config.following.push(tag);
@@ -93,12 +76,15 @@ function groupAndFormatByDay(arr: MyObject[] | undefined): string {
 
   return formattedStrings.join("\n\n");
 }
-async function handleWebhookEvent(webhookEvent: any) {
-  const senderPSID = webhookEvent?.sender?.id;
+async function handleWebhookEvent(webhookEvent: {
+  sender: { id: string };
+  message?: { quick_reply?: { payload?: string } };
+}) {
+  const senderPSID = webhookEvent.sender.id;
   const payload = webhookEvent?.message?.quick_reply?.payload;
   const user = await facebookUserController.getFacebookUser(senderPSID);
   if (user && !payload) {
-    return await callSendAPI(senderPSID, {
+    return await messenger.callSendAPI(senderPSID, {
       text: "Hello!\nWhat would you like to do?",
       quick_replies: [
         {
@@ -124,11 +110,11 @@ async function handleWebhookEvent(webhookEvent: any) {
       switch (payload) {
         case "UNSUBSCRIBE":
           await facebookUserController.removeFacebookUser(senderPSID);
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: "Subscription Removed!\nIf you ever wanted to subscribe again don't hesitate to message me!",
           });
         case "SETTINGS_UPDATE":
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: "What would you like to update?",
             quick_replies: [
               {
@@ -149,7 +135,7 @@ async function handleWebhookEvent(webhookEvent: any) {
             ],
           });
         case "CHANGE_LANG":
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: "Please Choose your Preferred Language.",
             quick_replies: [
               {
@@ -165,11 +151,10 @@ async function handleWebhookEvent(webhookEvent: any) {
             ],
           });
         case "CHANGE_LANG_EN":
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: "Language changed! Message me again if you need anyhting else.",
           });
         case "SCHEDULE": {
-          const user = await facebookUserController.getFacebookUser(senderPSID);
           const tournaments = await tournamentController.getAllTournaments();
           let message = "-No tournaments avaliable.";
           if (user && tournaments) {
@@ -204,7 +189,7 @@ async function handleWebhookEvent(webhookEvent: any) {
             message = groupAndFormatByDay(filtredTournaments);
           }
 
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: `${message}`,
           });
         }
@@ -212,7 +197,7 @@ async function handleWebhookEvent(webhookEvent: any) {
         case "CHANGE_FORMATS": {
           const user = await facebookUserController.getFacebookUser(senderPSID);
           const following: string = convertUserTags(user?.config.following);
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: `Please Select a format to Follow/Unfollow, you are currently following:\n\n${following}`,
             quick_replies: [
               {
@@ -239,10 +224,9 @@ async function handleWebhookEvent(webhookEvent: any) {
           });
         }
         case "CHANGE_FORMAT_MD": {
-          const user = await facebookUserController.getFacebookUser(senderPSID);
           const updatedUser = await toggleUserTag(user, "md");
           const following: string = convertUserTags(updatedUser?.config.following);
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: `Got it! Please Select a format to Follow/Unfollow, you are currently following:\n\n${following}`,
             quick_replies: [
               {
@@ -270,10 +254,9 @@ async function handleWebhookEvent(webhookEvent: any) {
         }
 
         case "CHANGE_FORMAT_SD": {
-          const user = await facebookUserController.getFacebookUser(senderPSID);
           const updatedUser = await toggleUserTag(user, "sd");
           const following: string = convertUserTags(updatedUser?.config.following);
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: `Got it! Please Select a format to Follow/Unfollow, you are currently following:\n\n${following}`,
             quick_replies: [
               {
@@ -301,10 +284,9 @@ async function handleWebhookEvent(webhookEvent: any) {
         }
 
         case "CHANGE_FORMAT_RD":
-          const user = await facebookUserController.getFacebookUser(senderPSID);
           const updatedUser = await toggleUserTag(user, "rd");
           const following: string = convertUserTags(updatedUser?.config.following);
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: `Got it! Please Select a format to Follow/Unfollow, you are currently following:\n\n${following}`,
             quick_replies: [
               {
@@ -330,7 +312,7 @@ async function handleWebhookEvent(webhookEvent: any) {
             ],
           });
         case "END":
-          return await callSendAPI(senderPSID, {
+          return await messenger.callSendAPI(senderPSID, {
             text: "Got it! Message me again if you need to adjust anything.",
           });
       }
@@ -340,12 +322,12 @@ async function handleWebhookEvent(webhookEvent: any) {
           id: senderPSID,
           config: { language: "en", following: ["rd", "sd", "md"] },
         });
-        return await callSendAPI(senderPSID, { text: "Subscription Complete!" });
+        return await messenger.callSendAPI(senderPSID, { text: "Subscription Complete!" });
       }
     }
-    return await callSendAPI(senderPSID, { text: "Unknown option, please try again!" });
+    return await messenger.callSendAPI(senderPSID, { text: "Unknown option, please try again!" });
   }
-  return await callSendAPI(senderPSID, {
+  return await messenger.callSendAPI(senderPSID, {
     text: "Hello!\nI'm DataStorm, a Bot that notifies you everytime a Yu-Gi-Oh! Digital Tournament is announced, Please enter the subscribe button below if you wish to get notified!\n\nIf you have any suggestions or want to report an issue, please contact the developer using one of these methods:\n-Discord:PlaymakerEY\n-Email:PlaymakerEY@gmail.com",
     quick_replies: [
       {
@@ -388,4 +370,3 @@ webhookRouter.get("/", (req, res) => {
 });
 
 export default webhookRouter;
-export { callSendAPI };

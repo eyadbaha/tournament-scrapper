@@ -39,7 +39,7 @@ const getInfo = async (eventId: string) => {
   ];
   const statusMap: { [key: string]: number } = { CREATED: 0, ACTIVE: 1, COMPLETED: 2 };
   const stateText = response.events[0].state as string;
-  const state: number = statusMap[stateText] || -1;
+  const state: number = stateText in statusMap ? statusMap[stateText] : -1;
   const url = `start.gg/tournament/${eventId}`;
   const tags = [];
   if (game.toLocaleLowerCase().includes("links")) {
@@ -114,7 +114,10 @@ const getBrackets = async (eventId: string) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const data = dataRequest?.data?.data?.tournament?.events?.[0]?.phases?.[0]?.sets?.nodes?.map(
-      (set: { slots: any[]; round: number }) => {
+      (set: {
+        slots: { standing: { stats: { score: { value: number } }; entrant: { id: number } } }[];
+        round: number;
+      }) => {
         const player1 = { id: set.slots[0].standing.entrant.id, score: set.slots[0].standing.stats.score.value };
         const player2 = { id: set.slots[1].standing.entrant.id, score: set.slots[1].standing.stats.score.value };
         const players = [player1, player2];

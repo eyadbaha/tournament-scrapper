@@ -8,13 +8,6 @@ interface FacebookUserSchema extends Document {
     following: string[];
   };
 }
-type FacebookUser = {
-  id: string;
-  config: {
-    language: string;
-    following: string[];
-  };
-};
 const createFacebookUser = async (facebookUser: {
   id: string;
   config: {

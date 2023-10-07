@@ -38,10 +38,8 @@ discordRouter.post("/update", async (req, res) => {
     for (let channel of allChannels) {
       const data = (await discord.getDiscordMessages(channel.id))[0];
       if (data && data?.id != channel.lastMessageId) {
-        let messages: any = (await discord.getDiscordMessages(channel.id, 4)).reverse();
-        const startIndex = messages.findIndex(
-          (message: { id: string; content: string }) => message.id == channel.lastMessageId
-        );
+        let messages = (await discord.getDiscordMessages(channel.id, 4)).reverse();
+        const startIndex = messages.findIndex((message) => message.id == channel.lastMessageId);
         if (startIndex != -1) messages = messages.slice(startIndex + 1);
         let infoArray: DataSchema[] = [];
         for (let message of messages) {

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const token = process.env.DISCORD_TOKEN;
-const getDiscordMessages = async (channelID: string, limit: number = 1): Promise<{ id: string; content: string }[]> => {
+const getDiscordMessages = async (channelID: string, limit: number = 1): Promise<discordMessage[]> => {
   try {
     if (!token || !/^\d+$/.test(channelID)) console.log(token, channelID);
     const apiURL = `https://discord.com/api/v9/channels/${channelID}/messages?limit=${limit}`;
