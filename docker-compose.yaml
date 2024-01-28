@@ -11,6 +11,7 @@ services:
       - "5000:8090"
     volumes:
       - ./src:/app/src
+      - ./tests:/app/tests
     env_file:
       - ./.env
   tournament-api-test:
