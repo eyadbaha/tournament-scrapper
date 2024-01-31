@@ -6,7 +6,6 @@ import facebookUserController from "../controllers/facebookUser.js";
 import formatDate from "../utils/formatDate.js";
 import messenger from "../services/messenger.js";
 import tournamentScrape from "../services/tournamentScrape.js";
-import { DataSchema } from "../schemas/infoData.js";
 
 const discordRouter = express.Router();
 
@@ -41,11 +40,13 @@ discordRouter.post("/update", async (req, res) => {
         let messages = (await discord.getDiscordMessages(channel.id, 4)).reverse();
         const startIndex = messages.findIndex((message) => message.id == channel.lastMessageId);
         if (startIndex != -1) messages = messages.slice(startIndex + 1);
+
         for (let message of messages) {
-          let messageUrls: string[] = message.content.match(/((https?:\/\/(www\.)?)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
+          let messageUrls: string[] = message.content.match(/https?:\/\/(?:www\.)?[^\s/$.?#]+\S*/gi) || [];
           if (message.embeds) {
             for (let embed of message.embeds) {
-              const urls = embed.description?.match(/((https?:\/\/(www\.)?)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
+              const urls = embed.description?.match(/https?:\/\/(?:www\.)?[^\s/$.?#]+\S*/gi) || [];
+
               messageUrls = messageUrls.concat(urls);
             }
           }

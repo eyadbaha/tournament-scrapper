@@ -44,7 +44,7 @@ const getInfo = async (id: string) => {
     else if (data.entryMenus[0].status == "OPEN") state = 0;
   } else if (data.status == "CLOSED") state = 2;
   else if (data.status == "SUSPENDED") state = -1;
-  const date = parseInt(data.tournaments[0].displayStartAt, 10);
+  const date = parseInt(data.tournaments[0].displayStartAt, 10) * 1000;
   const response = { title, details, game, participants, limit, organizer, url, tags, state, date };
   const res = infoDataSchema.parse(response);
   return res;
