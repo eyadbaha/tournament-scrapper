@@ -1,6 +1,8 @@
 {
   "ts-node": {
-    "files": true
+    "files": true,
+    "transpileOnly": true,
+    "esm": true
   },
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
@@ -113,5 +115,5 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
   "include": ["./src/**/*.ts"],
-  "exclude": ["node_modules", "tests", "vitest.config.ts"]
+  "exclude": ["tests", "vitest.config.ts"]
 }

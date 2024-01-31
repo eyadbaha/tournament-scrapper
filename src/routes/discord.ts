@@ -33,7 +33,7 @@ discordRouter.post("/", async (req, res, next) => {
   }
 });
 discordRouter.post("/update", async (req, res) => {
-  const allChannels = await channelController.getAllChannels();
+  const allChannels = (await channelController.getAllChannels()) || [];
   if (allChannels) {
     for (let channel of allChannels) {
       const data = (await discord.getDiscordMessages(channel.id))[0];
@@ -41,7 +41,6 @@ discordRouter.post("/update", async (req, res) => {
         let messages = (await discord.getDiscordMessages(channel.id, 4)).reverse();
         const startIndex = messages.findIndex((message) => message.id == channel.lastMessageId);
         if (startIndex != -1) messages = messages.slice(startIndex + 1);
-        let infoArray: DataSchema[] = [];
         for (let message of messages) {
           let messageUrls: string[] = message.content.match(/((https?:\/\/(www\.)?)|(www\.))[^\s/$.?#].[^\s]*/gi) || [];
           if (message.embeds) {
@@ -52,41 +51,43 @@ discordRouter.post("/update", async (req, res) => {
           }
           for (let url of messageUrls) {
             try {
-              const info = await tournamentScrape.getInfo(url);
-              if (info) infoArray.push(info);
+              const tournamentInDatabase = await tournamentController.getTournament(url);
+              if (!tournamentInDatabase) {
+                const info = await tournamentScrape.getInfo(url);
+                if (info) {
+                  const dateNow = Date.now();
+                  if (info.date > dateNow) {
+                    const postSuccess = await tournamentController.createTournament(info);
+                    if (postSuccess) {
+                      const messageArray = [];
+                      messageArray.push(`Title:${info.title}`);
+                      if (info.tags.includes("rd")) {
+                        messageArray.push("Format: Rush Duel");
+                      } else if (info.tags.includes("sd")) {
+                        messageArray.push("Format: Speed Duel");
+                      } else if (info.tags.includes("md")) {
+                        messageArray.push("Format: Master Duel");
+                      }
+                      messageArray.push(`Date: ${formatDate(info.date)}`);
+                      messageArray.push(`Link: https://${info.url}`);
+                      const message = messageArray.reduce((sum, message) => {
+                        return sum + `-${message}\n`;
+                      }, "");
+                      const facebookUsers = (await facebookUserController.getAllFacebookUsers()) || [];
+                      for (let facebookUser of facebookUsers) {
+                        if (info.tags.some((item) => facebookUser.config.following.includes(item)))
+                          await messenger.callSendAPI(
+                            facebookUser.id,
+                            { text: message },
+                            { messaging_type: "MESSAGE_TAG", tag: "CONFIRMED_EVENT_UPDATE" }
+                          );
+                      }
+                    }
+                  }
+                }
+              }
             } catch (err) {
               console.log(err);
-            }
-          }
-        }
-        for (let info of infoArray) {
-          const dateNow = Date.now();
-          if (info.date > dateNow) {
-            const postSuccess = await tournamentController.createTournament(info);
-            if (postSuccess) {
-              const messageArray = [];
-              messageArray.push(`Title:${info.title}`);
-              if (info.tags.includes("rd")) {
-                messageArray.push("Format: Rush Duel");
-              } else if (info.tags.includes("sd")) {
-                messageArray.push("Format: Speed Duel");
-              } else if (info.tags.includes("md")) {
-                messageArray.push("Format: Master Duel");
-              }
-              messageArray.push(`Date: ${formatDate(info.date)}`);
-              messageArray.push(`Link: https://${info.url}`);
-              const message = messageArray.reduce((sum, message) => {
-                return sum + `-${message}\n`;
-              }, "");
-              const facebookUsers = (await facebookUserController.getAllFacebookUsers()) || [];
-              for (let facebookUser of facebookUsers) {
-                if (info.tags.some((item) => facebookUser.config.following.includes(item)))
-                  await messenger.callSendAPI(
-                    facebookUser.id,
-                    { text: message },
-                    { messaging_type: "MESSAGE_TAG", tag: "CONFIRMED_EVENT_UPDATE" }
-                  );
-              }
             }
           }
         }

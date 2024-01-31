@@ -6,6 +6,7 @@ import ErrorHandler from "./middlewares/errorHandler.js";
 import { discordRouter } from "./routes/discord.js";
 import db from "./config/database.js";
 import webhookRouter from "./routes/webhook.js";
+import { updateInfoRouter } from "./routes/updateInfo.js";
 
 db;
 const app = express();
@@ -19,6 +20,7 @@ app.use("/tonamel", tonamel);
 app.use("/paidiagaming", paidiaGamingRouter);
 app.use("/discord", discordRouter);
 app.use("/webhook", webhookRouter);
+app.use("/updateInfo", updateInfoRouter);
 app.use(ErrorHandler);
 app.listen(process.env.PORT || port, () => {
   console.log(`Server started: http://localhost:${port}/`);

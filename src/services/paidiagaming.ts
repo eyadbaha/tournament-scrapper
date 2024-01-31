@@ -73,23 +73,29 @@ const evaluateBrackets = () => {
     }, 100);
   });
 };
+const getInfo = async (id: string) => {
+  const requestData = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/overview`, evaluateInfo);
+  const url = `paidiagaming.com/tournament/${id}`;
+  const tags = [];
+  if (requestData.game.toLocaleLowerCase().includes("links")) {
+    if (requestData.title.toLocaleLowerCase().includes("rush")) {
+      tags.push("rd");
+    } else tags.push("sd");
+  } else if (requestData.game.toLocaleLowerCase().includes("master")) {
+    tags.push("md");
+  }
+  const data = { ...requestData, tags, url };
+  const parsedData = infoDataSchema.parse(data);
+  return parsedData;
+};
 const getBrackets = async (id: string) => {
-  const data = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/brackets`, evaluateBrackets);
+  const matchesData = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/brackets`, evaluateBrackets);
+  const data = {
+    players: [],
+    matches: matchesData,
+  };
   const parsedData = matchesDataSchema.parse({ ...data });
   return parsedData;
 };
-const getInfo = async (id: string) => {
-  const data = await getDataFromHtmlPage(`https://paidiagaming.com/tournament/${id}/overview`, evaluateInfo);
-  const url = `paidiagaming.com/tournament/${id}`;
-  const tags = [];
-  if (data.game.toLocaleLowerCase().includes("links")) {
-    if (data.title.toLocaleLowerCase().includes("rush")) {
-      tags.push("rd");
-    } else tags.push("sd");
-  } else if (data.game.toLocaleLowerCase().includes("master")) {
-    tags.push("md");
-  }
-  const parsedData = infoDataSchema.parse({ ...data, tags, url });
-  return parsedData;
-};
+
 export default { getBrackets, getInfo };

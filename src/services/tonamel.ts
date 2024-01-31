@@ -1,95 +1,115 @@
 import infoDataSchema from "../schemas/infoData.js";
 import matchesDataSchema from "../schemas/matchesData.js";
-import getDataFromHtmlPage from "../utils/getDataFromHtmlPage.js";
+import axios from "axios";
 
-const evaluateInfo = () => {
-  const list = document.querySelectorAll<HTMLElement>("dt.title");
-  const getContentFromList = (title: string): string | undefined => {
-    return (Array.from(list).filter((el) => el.textContent?.includes(title))?.[0]?.nextElementSibling as HTMLElement)
-      ?.innerText;
-  };
-  const title = document.querySelector(
-    ".a-text.a-text--x-large.a-text--dimgray.a-text--inline.a-text--normal"
-  )?.textContent;
-  const date = Date.parse(getContentFromList("Event Starting Time")?.match(/(.*?) -/)?.[1] || "");
-  const details = getContentFromList("Event Details")?.replace(/\n\nRead More/g, "");
-  const game = document
-    .querySelector(".a-text.a-text--x-small.a-text--gray.a-text--inline.a-text--normal")
-    ?.textContent?.replace(/\b\w+\b/g, (word) => word.charAt(0) + word.slice(1).toLowerCase());
-  const limitString = getContentFromList("Participant Upper Limit")?.replace(/Players/g, "");
-  const organizer = document.querySelector<HTMLElement>(
-    "div.organization a div.a-flex.a-flex--flex-start.a-flex--row span.a-text.a-text--xx-small.a-text--gray.a-text--inline.a-text--normal"
-  )?.innerText;
-  const limit = limitString && +limitString;
-  let state = 0;
-  const finishState = document.querySelector(".entry-box")?.textContent?.includes("Finished") || false;
-  if (finishState) state = 2;
-  else if (Date.now() > date) state = 1;
-  return { title, date, details, game, state, limit, organizer };
-};
-const evaluatePart = () => {
-  return document.querySelectorAll(".m-profile-icon").length;
-};
-const evaluateBrackets = () => {
-  const brackets = document.querySelectorAll(".bracket-content");
-  if (brackets.length != 1) {
-    throw new Error(`{"status":404,"errorMessagege":"Tournament has not started"}`);
-  }
-  const result: { round: number; players: { id: string | undefined; score: string | null | undefined }[] }[] = [];
-  const bracket = document.querySelector(".bracket-content");
-  const lists = bracket?.querySelectorAll(".m-matchup-card-list");
-  lists?.forEach((list, listIndex) => {
-    const cards = list.querySelectorAll(".m-matchup-card.matchup-card");
-    cards.forEach((card) => {
-      const players = Array.from(card.querySelectorAll(".matchup-player")).map((player) => {
-        return {
-          id: player.querySelector("img")?.src.match(/player\/(.*?)\//)?.[1],
-          score: player.querySelector(".score-box__text")?.textContent,
-        };
-      });
-      result.push({
-        round: listIndex + 1,
-        players,
-      });
-    });
-  });
-  const data = result.reverse().splice(0, 15);
-  if (data[0].players[0].score == "-")
-    throw new Error(`{"status":404,"errorMessagege":"Tournament Brackets are not Finalized"}`);
-  return data;
+const headers = {
+  "X-Csrf-Token": process.env.TONAMEL_TOKEN,
+  "Content-Type": "application/json",
+  Cookie: process.env.TONAMEL_COOKIE,
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 };
 const getInfo = async (id: string) => {
-  const [data1, data2] = await Promise.all([
-    getDataFromHtmlPage(
-      `https://tonamel.com/competition/${id}`,
-      // ".competition-detail-info.competition-info",
-      evaluateInfo
-    ),
-    getDataFromHtmlPage(
-      `https://tonamel.com/competition/${id}/participants`,
-      // ".competition-participant-list.participant-list",
-      evaluatePart
-    ),
-  ]);
+  const infoRequest = await axios.post(
+    "https://tonamel.com/graphql/competition_management",
+    {
+      variables: { competitionId: id },
+      query:
+        "query getCompetitionDetail($competitionId: ID!) {\n  competition(id: $competitionId) {title\n    description\n game {\n      id\n      name\n}status\n    entryMenus {status\n      forParticipation\n      participantChosenNum\n      unitType\n      selectType\n      maxEntrantNum\n      countSummary {\n        currentEntrantNum}}\n    tournaments {style\n      status\n      participantSelectType\n      displayStartAt\n      isOnline\n       blockNum\n }organization {\n      id\n  }}\n}\n",
+    },
+    {
+      headers,
+    }
+  );
+  if (!infoRequest.data.data) throw { status: 404, errorMessagege: "Invalid Tournament ID" };
+  const data = infoRequest.data.data.competition;
+  const title = data.title;
+  const details = data.description;
+  const game = data.game.name.replace(/\b\w+\b/g, (word: string) => word.charAt(0) + word.slice(1).toLowerCase());
+  const participants = data.entryMenus[0].countSummary.currentEntrantNum;
+  const limit = data.entryMenus[0].participantChosenNum;
+  const organizer = data.organization.id;
   const url = `tonamel.com/competition/${id}`;
   const tags = [];
-  if (data1.game.toLocaleLowerCase().includes("links")) {
-    if (data1.title.toLocaleLowerCase().includes("rush")) {
+  if (game.toLocaleLowerCase().includes("links")) {
+    if (title.toLocaleLowerCase().includes("rush") || title.toLocaleLowerCase().includes("ラッシュ")) {
       tags.push("rd");
     } else tags.push("sd");
-  } else if (data1.game.toLocaleLowerCase().includes("master")) {
+  } else if (game.toLocaleLowerCase().includes("master")) {
     tags.push("md");
   }
-  const safeData = infoDataSchema.parse({ ...data1, participants: data2, url, tags });
-  return safeData;
+  let state = 1;
+  if (data.status == "OPENED") {
+    if (data.entryMenus[0].status == "NOT_OPENED" || data.entryMenus[0].status == "SUSPENDED") state = -1;
+    else if (data.entryMenus[0].status == "OPEN") state = 0;
+  } else if (data.status == "CLOSED") state = 2;
+  else if (data.status == "SUSPENDED") state = -1;
+  const date = parseInt(data.tournaments[0].displayStartAt, 10);
+  const response = { title, details, game, participants, limit, organizer, url, tags, state, date };
+  const res = infoDataSchema.parse(response);
+  return res;
 };
 const getBrackets = async (id: string) => {
-  const data = await getDataFromHtmlPage(
-    `https://tonamel.com/competition/${id}/tournament`,
-    //".entry-name__text",
-    evaluateBrackets
+  const matchesRequest = await axios.post(
+    `https://tonamel.com/graphql/competition/${id}`,
+    {
+      variables: {
+        blockFilter: { first: 0, after: "", last: 0, before: "", side: "BOTH" },
+        matchupFilter: { first: 0, after: "", last: 0, before: "" },
+      },
+      query:
+        "query GetPlayerTournament($blockFilter: BlockFilter!, $matchupFilter: MatchupFilter!) {\n  blocks(filter: $blockFilter) {\n    edges {\n      node {side\n      matchups(filter: $matchupFilter) {\n          edges {\n            node {status\n round\n             competitors {\n                edges {\n                  node {status\n      scores {\n                      score\n   }\n                    participant {playerId} }}}}}}}}}}",
+    },
+    {
+      headers,
+    }
   );
-  const safeData = matchesDataSchema.parse(data);
-  return safeData;
+  const playersRequest = await axios.post(
+    `https://tonamel.com/graphql/competition/${id}`,
+    {
+      variables: { blockFilter: { first: 0, after: "", last: 0, before: "", side: "BOTH" } },
+      query:
+        "query GetPodiums($blockFilter: BlockFilter!) {\n  blocks(filter: $blockFilter) {\n    edges {\n      node {result {\n          podium {\n            place\n            participant {\n              playerId}}\n          excludedParticipants {playerId\n            playerName\n  }}}}}}",
+    },
+    {
+      headers,
+    }
+  );
+  if (!matchesRequest.data.data || !playersRequest.data.data)
+    throw { status: 404, errorMessagege: "Invalid Tournament ID" };
+  if (playersRequest.data.data.blocks.edges.length == 0)
+    throw { status: 400, errorMessagege: "Tournament Results are not finalized" };
+  const players = playersRequest.data.data.blocks.edges[0].node.result.podium.map((podium: any) => {
+    return {
+      place: podium.place,
+      id: podium.participant.playerId,
+    };
+  });
+  const matches = matchesRequest.data.data.blocks.edges
+    .map((edge: any) => {
+      return edge.node.matchups.edges;
+    })
+    .flat(1)
+    .map((edge: any) => {
+      const node = edge.node;
+      const round = node.round;
+      const player1 = node.competitors.edges[0];
+      const player2 = node.competitors.edges[1];
+      if (player1 && player2) {
+        const players = [
+          { id: player1.node.participant.playerId, score: player1.node.scores[0].score },
+          { id: player2.node.participant.playerId, score: player2.node.scores[0].score },
+        ];
+        return { round, players };
+      }
+      return null;
+    })
+    .filter(Boolean);
+  const datas = {
+    players,
+    matches: matches,
+  };
+  const res = matchesDataSchema.parse(datas);
+  return res;
 };
 export default { getInfo, getBrackets };

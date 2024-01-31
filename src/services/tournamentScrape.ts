@@ -1,8 +1,10 @@
 import startgg from "./startgg.js";
 import tonamel from "./tonamel.js";
 import paidiagaming from "./paidiagaming.js";
+import { DataSchema } from "../schemas/infoData.js";
+import { MatchesSchema } from "../schemas/matchesData.js";
 
-const getInfo = async (url: string) => {
+const getInfo = async (url: string): Promise<DataSchema | null> => {
   const id = /^(?:https?:\/\/)?(?:www\.)?[^/]+\/[^/]+\/([^/]+)/.exec(url)?.[1] || "";
   if (["smash.gg", "start.gg"].some((link) => url.includes(link))) {
     const info = await startgg.getInfo(id);
@@ -16,7 +18,7 @@ const getInfo = async (url: string) => {
   }
   return null;
 };
-const getBrackets = async (url: string) => {
+const getBrackets = async (url: string): Promise<MatchesSchema | null> => {
   const id = /^(?:https?:\/\/)?(?:www\.)?[^/]+\/[^/]+\/([^/]+)/.exec(url)?.[1] || "";
   if (["smash.gg", "start.gg"].some((link) => url.includes(link))) {
     const info = await startgg.getBrackets(id);

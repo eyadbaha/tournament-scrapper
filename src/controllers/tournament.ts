@@ -12,9 +12,9 @@ const createTournament = async (tournament: any) => {
     return false;
   }
 };
-const getTournament = async (_id: ObjectId): Promise<DataSchema | null> => {
+const getTournament = async (url: string): Promise<DataSchema | null> => {
   try {
-    const tournament = await tournamentModel.findById(_id).lean();
+    const tournament = await tournamentModel.findOne({ url: url }).lean();
     return tournament || null;
   } catch {
     return null;
@@ -28,5 +28,13 @@ const getAllTournaments = async (): Promise<DataSchema[] | null> => {
     return null;
   }
 };
-const tournamentController = { createTournament, getTournament, getAllTournaments };
+const updateTournament = async (data: DataSchema): Promise<Boolean> => {
+  try {
+    const tournament = await tournamentModel.findOneAndUpdate({ url: data.url }, data, { runValidators: true });
+    return true;
+  } catch {
+    return false;
+  }
+};
+const tournamentController = { createTournament, getTournament, getAllTournaments, updateTournament };
 export default tournamentController;

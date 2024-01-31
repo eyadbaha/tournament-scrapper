@@ -34,7 +34,7 @@ const tournamentSchema = new mongoose.Schema<DataSchema>({
     required: false,
   },
   organizer: {
-    type: String,
+    type: String || Number,
     required: false,
     min: 0,
   },
@@ -46,6 +46,25 @@ const tournamentSchema = new mongoose.Schema<DataSchema>({
   tags: {
     type: [String],
     required: true,
+  },
+  brackets: {
+    type: {
+      players: [
+        {
+          id: { type: String || Number, required: true },
+          place: { type: Number, required: true },
+          deckType: {
+            type: String,
+            required: false,
+          },
+          deck: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: false,
+          },
+        },
+      ],
+      matches: [{ round: Number, players: [{ id: String || Number, score: Number }] }],
+    },
   },
 });
 
