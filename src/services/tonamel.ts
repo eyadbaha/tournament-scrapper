@@ -1,6 +1,7 @@
 import infoDataSchema from "../schemas/infoData.js";
 import matchesDataSchema from "../schemas/matchesData.js";
 import axios from "axios";
+import playerSchema from "../schemas/player.js";
 
 // Headers for the Tonamel API requests
 const headers = {
@@ -227,6 +228,22 @@ const getBrackets = async (id: string) => {
   const res = matchesDataSchema.parse(datas);
   return res;
 };
+const getPlayer = async (id: string) => {
+  let request: any;
+  try {
+    request = await axios(`https://tonamel.com/player/${id}`);
+  } catch (e) {
+    throw { status: 404, errorMessage: "Invalid Player ID" };
+  }
+  const titleRegex = /<title>(.*?)\s*\| Tonamel<\/title>/;
 
+  // Use the regular expression to get the title content
+  const match = request.data.match(titleRegex);
+
+  // Extract the title if there's a match
+  const name = match ? match[1].trim() : null;
+  const response = playerSchema.parse({ id, type: "tonamel", discordID: null, name });
+  return response;
+};
 // Export the functions
-export default { getInfo, getBrackets };
+export default { getInfo, getBrackets, getPlayer };

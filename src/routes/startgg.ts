@@ -20,4 +20,13 @@ startggRouter.get("/info/:id", async (req, res, next) => {
     next(err);
   }
 });
+startggRouter.get("/player/:id", async (req, res, next) => {
+  const eventId = req.params.id;
+  try {
+    const data = await startgg.getPlayer(eventId);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
 export default startggRouter;

@@ -9,6 +9,9 @@ describe("Tonamel Api Handler", async () => {
     await expect(tonamel.getInfo("dMj4q")).resolves.toSatisfy((value: any) => {
       return value.title == "第82回水仙杯";
     });
+    await expect(tonamel.getPlayer("c2qmY")).resolves.toSatisfy((value: any) => {
+      return value.name == "Playmaker EY";
+    });
   }, 120000);
   it("throws an error when passed invalid tournament id", async () => {
     await expect(tonamel.getBrackets("invalid")).rejects.toThrow();

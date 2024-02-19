@@ -56,7 +56,7 @@ After setting up Docker/docker-compose, save the development environments to a .
 
 ## Tests
 
-To run tests, run the following command (at this time, coverage is only 9%):
+To run tests, run the following command (at this time, coverage is only 14%):
 `npm run test`
 
 ## Examples

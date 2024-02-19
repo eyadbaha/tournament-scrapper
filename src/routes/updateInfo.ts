@@ -17,9 +17,14 @@ const update = async () => {
       })) {
         try {
           const result = await tournamentScrape.getInfo(tournament.url);
-          tournamentsUpdatedInfo.push(result);
+          if (result) tournamentsUpdatedInfo.push(result);
+          else {
+            console.log("Retrying...");
+            const result = await tournamentScrape.getInfo(tournament.url);
+            if (result) tournamentsUpdatedInfo.push(result);
+          }
         } catch (e: any) {
-          console.log(e);
+          console.log(`Error of tournament ${tournament.url}:${e}`);
           if (e.status == 404) {
             await tournamentModel.findOneAndDelete({ url: tournament.url });
           }
@@ -39,13 +44,27 @@ const update = async () => {
         if (tournament) {
           try {
             const brackets = await tournamentScrape.getBrackets(tournament.url);
-            await tournamentModel.findOneAndUpdate(
-              { url: tournament.url },
-              { brackets, state: 2, participants: tournament.participants },
-              { new: true }
-            );
+            if (brackets) {
+              await tournamentModel.findOneAndUpdate(
+                { url: tournament.url },
+                { brackets, state: 2, participants: tournament.participants },
+                { new: true }
+              );
+            } else {
+              console.log("Retrying...");
+              const brackets = await tournamentScrape.getBrackets(tournament.url);
+              if (brackets) {
+                await tournamentModel.findOneAndUpdate(
+                  { url: tournament.url },
+                  { brackets, state: 2, participants: tournament.participants },
+                  { new: true }
+                );
+              } else {
+                await tournamentModel.findOneAndDelete({ url: tournament.url });
+              }
+            }
           } catch (e) {
-            console.log(e);
+            console.log(`Error of tournament ${tournament.url}:${e}`);
             errCount++;
           }
         }

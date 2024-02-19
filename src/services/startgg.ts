@@ -1,40 +1,123 @@
 import infoDataSchema from "../schemas/infoData.js";
 import matchesDataSchema from "../schemas/matchesData.js";
 import axios from "axios";
+import playerSchema from "../schemas/player.js";
 
+interface PlayerApiResponse {
+  authorizations:
+    | {
+        type: string | null;
+        url: string | null;
+        externalId: string | null;
+      }[]
+    | null;
+  player: {
+    gamerTag: string | null;
+    prefix: string | null;
+  };
+}
+const INFO_QUERY = `query tournament($eventId: String!) {
+  tournament(slug: $eventId) {
+    id
+    name
+    numAttendees
+    rules
+    owner {
+      id
+      player {
+        gamerTag
+      }
+    }
+    events(limit:1) {
+      state
+      startAt
+      videogame {
+        name
+      }
+    }
+  }
+}`;
+const PHASE_QUERY = `query tournament($eventId: String!) {
+  tournament(slug: $eventId) {
+    events (limit:1) {
+      phases {
+        id
+        bracketType 
+      }
+    }
+  }
+}`;
+const BRACKETS_REQUEST = `query tournament($eventId: String!,$phaseId: ID!) {
+  tournament(slug: $eventId) {
+    events (limit:1) {
+      phases(phaseId: $phaseId) {
+        sets(perPage: 31){
+            nodes {
+                round
+                slots {
+                    standing {
+                        entrant {
+                          participants {
+                            user {
+                              id
+                            }
+                          }
+                        }
+                        stats {
+                            score {
+                                value
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      }
+      standings(query:{page:1,perPage:32}){
+        nodes {
+          player{
+            user{
+              id
+            }
+          }
+          placement
+        }
+      }
+    }
+  }
+}`;
+const PLAYER_QUERY = `query player($id:ID!) {
+  user(id: $id){
+authorizations{
+type
+url
+externalId
+}
+  player{
+    gamerTag
+    prefix
+  }
+}}`;
+const starggGraphQlRequest = async (options: { query: string; variables?: Record<string, any> }) => {
+  const infoRequest = await axios.post("https://api.start.gg/gql/alpha", options, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return infoRequest;
+};
 const token = process.env.STARTGG_TOKEN;
 const getInfo = async (eventId: string) => {
-  const infoRequest = await axios.post(
-    "https://api.start.gg/gql/alpha",
-    {
-      query: `query tournament($eventId: String!) {
-            tournament(slug: $eventId) {
-              id
-              name
-              numAttendees
-              rules
-              owner {
-                id
-                player {
-                  gamerTag
-                }
-              }
-              events(limit:1) {
-                state
-                startAt
-                videogame {
-                  name
-                }
-              }
-            }
-          }`,
-      variables: {
-        eventId: eventId,
-      },
+  await starggGraphQlRequest({
+    query: INFO_QUERY,
+    variables: {
+      eventId: eventId,
     },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-
+  });
+  const infoRequest = await starggGraphQlRequest({
+    query: INFO_QUERY,
+    variables: {
+      eventId: eventId,
+    },
+  });
   const response = infoRequest?.data?.data?.tournament;
   if (!response) throw { status: 404, errorMessagege: "Invalid Tournament ID" };
   const markdownDetailsRequest = await axios.post(
@@ -101,115 +184,31 @@ const getBrackets = async (eventId: string) => {
   const info = await getInfo(eventId);
   if (info.state != 2 && info.state != 1)
     throw { status: 400, errorMessagege: "Tournament Results are not finalized." };
-  const phasesRequest = await axios.post(
-    "https://api.start.gg/gql/alpha",
-    {
-      query: `query tournament($eventId: String!) {
-            tournament(slug: $eventId) {
-              events (limit:1) {
-                phases {
-                  id
-                  bracketType 
-                }
-              }
-            }
-          }`,
-      variables: {
-        eventId: eventId,
-      },
+  const phasesRequest = await starggGraphQlRequest({
+    query: PHASE_QUERY,
+    variables: {
+      eventId: eventId,
     },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-
+  });
   if (!phasesRequest.data.data.tournament) throw { status: 404, errorMessagege: "Invalid Tournament ID" };
   const phases = phasesRequest.data.data.tournament.events[0].phases;
   if (phases[phases.length - 1].bracketType == "SINGLE_ELIMINATION") {
-    let dataRequest = await axios.post(
-      "https://api.start.gg/gql/alpha",
-      {
-        query: `query tournament($eventId: String!) {
-                tournament(slug: $eventId) {
-                  events (limit:1) {
-                    phases(phaseId: ${phases[phases.length - 1].id}) {
-                      sets(perPage: 31){
-                          nodes {
-                              round
-                              slots {
-                                  standing {
-                                      entrant {
-                                          id
-                                      }
-                                      stats {
-                                          score {
-                                              value
-                                          }
-                                      }
-                                  }
-                              }
-                          }
-                      }
-                    }
-                    standings(query:{page:1,perPage:32}){
-                      nodes {
-                        entrant{
-                          id
-                        }
-                        placement
-                      }
-                    }
-                  }
-                }
-              }`,
-        variables: {
-          eventId: eventId,
-        },
+    let dataRequest = await starggGraphQlRequest({
+      query: BRACKETS_REQUEST,
+      variables: {
+        eventId: eventId,
+        phaseId: phases[phases.length - 1].id,
       },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    });
     let retry = 1;
     while (dataRequest?.data?.data?.tournament?.events?.[0]?.phases?.[0]?.sets?.nodes?.length == 0) {
-      dataRequest = await axios.post(
-        "https://api.start.gg/gql/alpha",
-        {
-          query: `query tournament($eventId: String!) {
-                  tournament(slug: $eventId) {
-                    events (limit:1) {
-                      phases(phaseId: ${phases[phases.length - retry].id}) {
-                        sets(perPage: 31){
-                            nodes {
-                                round
-                                slots {
-                                    standing {
-                                        entrant {
-                                            id
-                                        }
-                                        stats {
-                                            score {
-                                                value
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                      }
-                      standings(query:{page:1,perPage:32}){
-                        nodes {
-                          entrant{
-                            id
-                          }
-                          placement
-                        }
-                      }
-                    }
-                  }
-                }`,
-          variables: {
-            eventId: eventId,
-          },
+      dataRequest = await starggGraphQlRequest({
+        query: BRACKETS_REQUEST,
+        variables: {
+          eventId: eventId,
+          phaseId: phases[phases.length - retry].id,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      });
       retry++;
     }
     const matchesData = dataRequest?.data?.data?.tournament?.events?.[0]?.phases?.[0]?.sets?.nodes
@@ -221,18 +220,35 @@ const getBrackets = async (eventId: string) => {
       })
       ?.map(
         (set: {
-          slots: { standing: { stats: { score: { value: number } }; entrant: { id: number } } }[];
+          slots: {
+            standing: {
+              stats: { score: { value: number } };
+              entrant: {
+                participants: {
+                  user: {
+                    id: number;
+                  };
+                }[];
+              };
+            };
+          }[];
           round: number;
         }) => {
-          const player1 = { id: set.slots[0].standing.entrant.id, score: set.slots[0].standing.stats.score.value };
-          const player2 = { id: set.slots[1].standing.entrant.id, score: set.slots[1].standing.stats.score.value };
+          const player1 = {
+            id: set.slots[0].standing.entrant.participants[0].user.id,
+            score: set.slots[0].standing.stats.score.value,
+          };
+          const player2 = {
+            id: set.slots[1].standing.entrant.participants[0].user.id,
+            score: set.slots[1].standing.stats.score.value,
+          };
           const players = [player1, player2];
           return { round: set.round, players };
         }
       );
     const playersData = dataRequest?.data?.data?.tournament?.events?.[0].standings?.nodes;
     const players = playersData.map((player: any) => {
-      return { id: player.entrant.id, place: player.placement };
+      return { id: player.player.user.id, place: player.placement };
     });
     const data = {
       players: players,
@@ -241,49 +257,13 @@ const getBrackets = async (eventId: string) => {
     const parsedData = matchesDataSchema.parse(data);
     return parsedData;
   } else if (phases[phases.length - 1].bracketType == "DOUBLE_ELIMINATION") {
-    let dataRequest = await axios.post(
-      "https://api.start.gg/gql/alpha",
-      {
-        query: `query tournament($eventId: String!) {
-                tournament(slug: $eventId) {
-                  events (limit:1) {
-                    phases(phaseId: ${phases[0].id}) {
-                      sets(perPage: 31){
-                          nodes {
-                              round
-                              slots {
-                                  standing {
-                                      entrant {
-                                          id
-                                          name
-                                      }
-                                      stats {
-                                          score {
-                                              value
-                                          }
-                                      }
-                                  }
-                              }
-                          }
-                      }
-                    }
-                    standings(query:{page:1,perPage:32}){
-                      nodes {
-                        entrant{
-                          id
-                        }
-                        placement
-                      }
-                    }
-                  }
-                }
-              }`,
-        variables: {
-          eventId: eventId,
-        },
+    let dataRequest = await starggGraphQlRequest({
+      query: BRACKETS_REQUEST,
+      variables: {
+        eventId: eventId,
+        phaseId: phases[0].id,
       },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    });
     const matchesData = dataRequest?.data?.data?.tournament?.events?.[0]?.phases?.[0]?.sets?.nodes
       ?.filter((set: any) => {
         return (
@@ -293,18 +273,35 @@ const getBrackets = async (eventId: string) => {
       })
       ?.map(
         (set: {
-          slots: { standing: { stats: { score: { value: number } }; entrant: { id: number } } }[];
+          slots: {
+            standing: {
+              stats: { score: { value: number } };
+              entrant: {
+                participants: {
+                  user: {
+                    id: number;
+                  };
+                }[];
+              };
+            };
+          }[];
           round: number;
         }) => {
-          const player1 = { id: set.slots[0].standing.entrant.id, score: set.slots[0].standing.stats.score.value };
-          const player2 = { id: set.slots[1].standing.entrant.id, score: set.slots[1].standing.stats.score.value };
+          const player1 = {
+            id: set.slots[0].standing.entrant.participants[0].user.id,
+            score: set.slots[0].standing.stats.score.value,
+          };
+          const player2 = {
+            id: set.slots[1].standing.entrant.participants[0].user.id,
+            score: set.slots[1].standing.stats.score.value,
+          };
           const players = [player1, player2];
           return { round: set.round, players };
         }
       );
     const playersData = dataRequest?.data?.data?.tournament?.events?.[0].standings?.nodes;
     const players = playersData.map((player: any) => {
-      return { id: player.entrant.id, place: player.placement };
+      return { id: player.player.user.id, place: player.placement };
     });
     const data = {
       players: players,
@@ -315,5 +312,19 @@ const getBrackets = async (eventId: string) => {
   }
   throw { status: 500, errorMessagege: "Internal Server Error" };
 };
-
-export default { getBrackets, getInfo };
+const getPlayer = async (id: string) => {
+  const playerRequest = await starggGraphQlRequest({
+    query: PLAYER_QUERY,
+    variables: {
+      id: id,
+    },
+  });
+  const data: PlayerApiResponse = playerRequest.data.data.user;
+  if (!data.player) {
+    return null;
+  }
+  const discordID: string | null = data.authorizations?.find((auth) => auth.type === "DISCORD")?.externalId || null;
+  const response = playerSchema.parse({ id, type: "startgg", discordID, name: data.player.gamerTag });
+  return response;
+};
+export default { getBrackets, getInfo, getPlayer };

@@ -21,4 +21,13 @@ tonamelRouter.get("/brackets/:id", async (req, res, next) => {
     next(err);
   }
 });
+tonamelRouter.get("/player/:id", async (req, res, next) => {
+  const id = req.params.id;
+  try {
+    const data = await tonamel.getPlayer(id);
+    return res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
 export default tonamelRouter;
