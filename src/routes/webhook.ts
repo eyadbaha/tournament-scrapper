@@ -76,10 +76,7 @@ function groupAndFormatByDay(arr: MyObject[] | undefined): string {
 
   return formattedStrings.join("\n\n");
 }
-async function handleWebhookEvent(webhookEvent: {
-  sender: { id: string };
-  message?: { quick_reply?: { payload?: string } };
-}) {
+async function handleWebhookEvent(webhookEvent: { sender: { id: string }; message?: { quick_reply?: { payload?: string } } }) {
   const senderPSID = webhookEvent.sender.id;
   const payload = webhookEvent?.message?.quick_reply?.payload;
   const user = await facebookUserController.getFacebookUser(senderPSID);
@@ -341,11 +338,19 @@ async function handleWebhookEvent(webhookEvent: {
 const webhookRouter = express.Router();
 
 webhookRouter.post("/", async (req, res) => {
-  const webhookEvent = req.body.entry?.[0]?.messaging?.[0];
   try {
-    await handleWebhookEvent(webhookEvent);
-  } catch (error) {
-    console.log(error);
+    console.log(JSON.stringify(req.body));
+  } catch {
+    console.log(req.body);
+  }
+  if (req.body?.entry?.[0]?.messaging?.[0]?.message) {
+    const webhookEvent = req.body.entry?.[0]?.messaging?.[0];
+    try {
+      await handleWebhookEvent(webhookEvent);
+    } catch (error) {
+      console.log(error);
+    }
+    res.status(200).send("RECIVED");
   }
   res.status(200).send("RECIVED");
 });
